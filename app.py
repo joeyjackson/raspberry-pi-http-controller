@@ -1,15 +1,24 @@
+import time
+import os
+from threading import Thread, Lock
+
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
+
 import RPi.GPIO as GPIO
-import time
-from threading import Thread, Lock
+
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
+admin_username = os.getenv('ADMIN_USER', 'admin')
+admin_pwd = os.getenv('ADMIN_PASSWORD')
+if not admin_pwd:
+  raise Exception("Must specify ADMIN_PASSWORD")
+
 users = {
-  "joey": generate_password_hash("secret_password")
+  admin_username: generate_password_hash(admin_pwd)
 }
 
 def setup_gpio():
@@ -41,12 +50,12 @@ def verify_password(username, password):
 @app.route("/")
 @auth.login_required
 def index():
-  return "Hello, %s!" % auth.current_user()
+  return "Raspberry Pi Controller - current user: %s" % auth.current_user()
 
 @app.route("/api/led")
 @auth.login_required
 def led_ctl():
-  blink_led_async(10)
+  blink_led_async(5)
   return "LED"
 
 if __name__ == "__main__":
