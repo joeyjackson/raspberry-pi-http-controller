@@ -1,30 +1,40 @@
-const btn = document.getElementById("btn");
+const btn1 = document.getElementById("btn1");
+const btn5 = document.getElementById("btn5");
+const btn10 = document.getElementById("btn10");
 
-const postBlink = () => {
-  btn.disabled = true;
-  console.log("blink");
+const setBtnsDisabled = (disabled) => {
+  btn1.disabled = disabled;
+  btn5.disabled = disabled;
+  btn10.disabled = disabled;
+};
 
-  const payload = {blink_count: 5};
-
-  fetch("/api/led", {
-    method: "POST",
-    headers: {'Content-Type': 'application/json'}, 
-    body: JSON.stringify(payload)
-  }).then(
-    res => {
-    res.text().then(data => {
-      console.log(data);
-      alert(data);
+const postBlink = (blink_count) => {
+  return () => {
+    setBtnsDisabled(true);
+    const payload = {blink_count: blink_count};
+  
+    fetch("/api/led", {
+      method: "POST",
+      headers: {'Content-Type': 'application/json'}, 
+      body: JSON.stringify(payload)
+    }).then(
+      res => {
+      res.text().then(data => {
+        console.log(data);
+        alert(data);
+      }).catch(err => {
+        console.error(err);
+        alert(err);
+      })
     }).catch(err => {
       console.error(err);
       alert(err);
-    })
-  }).catch(err => {
-    console.error(err);
-    alert(err);
-  }).finally(() => {
-    btn.disabled = false;
-  });
+    }).finally(() => {
+      setBtnsDisabled(false);
+    });
+  }
 };
 
-btn.addEventListener('click', postBlink);
+btn1.addEventListener('click', postBlink(1));
+btn5.addEventListener('click', postBlink(5));
+btn10.addEventListener('click', postBlink(10));
