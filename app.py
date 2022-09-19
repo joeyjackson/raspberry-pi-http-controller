@@ -2,7 +2,7 @@ import time
 import os
 from threading import Thread, Lock
 
-from flask import Flask
+from flask import Flask, request, render_template
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -50,13 +50,19 @@ def verify_password(username, password):
 @app.route("/")
 @auth.login_required
 def index():
-  return "Raspberry Pi Controller - current user: %s" % auth.current_user()
+  return render_template('index.html', current_user=auth.current_user())
 
-@app.route("/api/led")
+@app.post("/api/led")
 @auth.login_required
 def led_ctl():
-  blink_led_async(5)
-  return "LED"
+  content_type = request.headers.get('Content-Type')
+  if (content_type == 'application/json'):
+    data = request.get_json()
+    blink_count = data["blink_count"]
+    blink_led_async(blink_count=blink_count)
+    return "Blinking LED %s times" % blink_count
+  else:
+    return 'Content-Type not supported!'
 
 if __name__ == "__main__":
   try:
@@ -64,3 +70,4 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0")
   finally:
     cleanup_gpio()
+  
