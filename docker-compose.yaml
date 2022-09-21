@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  controller:
+    build: ./server
+    privileged: true
+    restart: unless-stopped
+    environment:
+     - ADMIN_USER=${ADMIN_USER}
+     - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    volumes:
+     - controller-db:/app/db
+    
+volumes:
+  controller-db:

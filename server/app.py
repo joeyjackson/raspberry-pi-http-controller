@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 import RPi.GPIO as GPIO
 
+LED_PIN = 40
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -24,7 +25,7 @@ users = {
 def setup_gpio():
   print("Setting up GPIO")
   GPIO.setmode(GPIO.BOARD)
-  GPIO.setup(40, GPIO.OUT)
+  GPIO.setup(LED_PIN, GPIO.OUT)
 
 def cleanup_gpio():
   print("Cleaning up GPIO")
@@ -34,9 +35,9 @@ gpio_lock = Lock()
 def blink_led(blink_count):
   with gpio_lock:
     for _ in range(blink_count):
-      GPIO.output(40,True)
+      GPIO.output(LED_PIN, True)
       time.sleep(1)
-      GPIO.output(40,False)
+      GPIO.output(LED_PIN, False)
       time.sleep(1)
 
 def blink_led_async(blink_count):
