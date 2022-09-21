@@ -19,7 +19,7 @@ docker run --env-file=.env --rm --privileged -p 5000:5000 -d --name=controller r
 
 ### Deploy with Nginx
 See https://github.com/joeyjackson/docker-nginx-certbot-route53#connecting-with-other-docker-compose-apps
+For example:
 ```
-$ docker-compose -f path/to/other/app/docker-compose.yml -f compose-override/docker-compose.override.yml up -d
-$ docker-compose -f docker-compose.yml -f compose-override/docker-compose.override.yml up -d
+$ docker compose -f docker-compose.yml -f ../docker-nginx-certbot-route53/compose-override/docker-compose.override.yml up -d
 ```
