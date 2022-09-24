@@ -13,9 +13,13 @@ import RPi.GPIO as GPIO
 numeric_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO'), None)
 if not isinstance(numeric_level, int):
   raise ValueError('Invalid log level: %s' % os.getenv('LOG_LEVEL', 'INFO'))
-logging.basicConfig(level=numeric_level)
+# https://docs.python.org/3/library/logging.html#logrecord-attributes
+logging.basicConfig(
+  level=numeric_level, 
+  format="[%(levelname)s] %(asctime)s - %(name)s - %(message)s"
+)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("controller")
 
 LED_PIN = 40
 
