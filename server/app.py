@@ -1,5 +1,6 @@
 import time
 import os
+import logging
 from threading import Thread, Lock
 
 from flask import Flask, request, render_template
@@ -7,6 +8,14 @@ from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import RPi.GPIO as GPIO
+
+# LOG_LEVEL: CRITICAL, ERROR, WARNING, INFO, or DEBUG
+numeric_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO'), None)
+if not isinstance(numeric_level, int):
+  raise ValueError('Invalid log level: %s' % os.getenv('LOG_LEVEL', 'INFO'))
+logging.basicConfig(level=numeric_level)
+
+logger = logging.getLogger(__name__)
 
 LED_PIN = 40
 
@@ -23,17 +32,18 @@ users = {
 }
 
 def setup_gpio():
-  print("Setting up GPIO")
+  logger.info("Setting up GPIO")
   GPIO.setmode(GPIO.BOARD)
   GPIO.setup(LED_PIN, GPIO.OUT)
 
 def cleanup_gpio():
-  print("Cleaning up GPIO")
+  logger.info("Cleaning up GPIO")
   GPIO.cleanup()
 
 gpio_lock = Lock()
 def blink_led(blink_count):
   with gpio_lock:
+    logger.debug("Blinking LED %d times", blink_count)
     for _ in range(blink_count):
       GPIO.output(LED_PIN, True)
       time.sleep(1)
