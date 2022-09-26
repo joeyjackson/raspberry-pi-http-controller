@@ -9,31 +9,57 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 import RPi.GPIO as GPIO
 
-# LOG_LEVEL: CRITICAL, ERROR, WARNING, INFO, or DEBUG
-numeric_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO'), None)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                  LOGGER                                     #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+numeric_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO"), None)
 if not isinstance(numeric_level, int):
-  raise ValueError('Invalid log level: %s' % os.getenv('LOG_LEVEL', 'INFO'))
+  raise ValueError("Invalid log level: %s" % os.getenv("LOG_LEVEL", "INFO"))
 # https://docs.python.org/3/library/logging.html#logrecord-attributes
+# LOG_LEVEL: CRITICAL, ERROR, WARNING, INFO, or DEBUG
 logging.basicConfig(
   level=numeric_level, 
   format="[%(levelname)s] %(asctime)s - %(name)s - %(message)s"
 )
-
 logger = logging.getLogger("controller")
 
-LED_PIN = 40
 
-app = Flask(__name__)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                  AUTH                                       #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# https://flask-httpauth.readthedocs.io/en/latest/
 auth = HTTPBasicAuth()
 
-admin_username = os.getenv('ADMIN_USER', 'admin')
-admin_pwd = os.getenv('ADMIN_PASSWORD')
+admin_username = os.getenv("ADMIN_USER", "admin")
+admin_pwd = os.getenv("ADMIN_PASSWORD")
 if not admin_pwd:
   raise Exception("Must specify ADMIN_PASSWORD")
 
 users = {
-  admin_username: generate_password_hash(admin_pwd)
+  admin_username: generate_password_hash(admin_pwd),
 }
+
+@auth.get_user_roles
+def get_user_roles(user):
+  if user == "admin":
+    return ["admin"]
+  else:
+    return []
+
+@auth.verify_password
+def verify_password(username, password):
+  if username in users and check_password_hash(users.get(username), password):
+    return username
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                  GPIO / LEDs                                #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+LED_PIN = 40
 
 def setup_gpio():
   logger.info("Setting up GPIO")
@@ -57,18 +83,20 @@ def blink_led(blink_count):
 def blink_led_async(blink_count):
   Thread(target = blink_led, args = (blink_count,)).start()
 
-@auth.verify_password
-def verify_password(username, password):
-  if username in users and check_password_hash(users.get(username), password):
-    return username
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                  ROUTES                                     #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+app = Flask(__name__)
 
 @app.route("/")
 @auth.login_required
 def index():
-  return render_template('index.html', current_user=auth.current_user())
+  return render_template("index.html", current_user=auth.current_user())
 
 @app.post("/api/led")
-@auth.login_required
+@auth.login_required(role=["admin"])
 def led_ctl():
   content_type = request.headers.get('Content-Type')
   if (content_type == 'application/json'):
@@ -77,7 +105,12 @@ def led_ctl():
     blink_led_async(blink_count=blink_count)
     return "Blinking LED %s times" % blink_count
   else:
-    return 'Content-Type not supported!'
+    return "Content-Type not supported!"
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                  RUNNER                                     #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 if __name__ == "__main__":
   try:
