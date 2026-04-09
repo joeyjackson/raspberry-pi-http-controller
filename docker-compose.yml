@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   controller:
-    build: ./server
+    image: joeyjackson/raspberry-pi-http-controller
     privileged: true
     restart: unless-stopped
     environment:
